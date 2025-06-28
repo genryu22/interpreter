@@ -1,8 +1,10 @@
+use std::path::Path;
+
 trait Usage {
     fn show(&self) -> i32;
 }
 trait FileExec {
-    fn exec(&self, file: &str);
+    fn exec(&self, file: &Path);
 }
 trait Repl {
     fn start(&self);
@@ -12,7 +14,7 @@ fn run(args: &[String], usage: &impl Usage, file_exec: &impl FileExec, repl: &im
     match args.len() {
         n if n > 1 => usage.show(),
         1 => {
-            file_exec.exec(&args[0]);
+            file_exec.exec(Path::new(&args[0]));
             0
         }
         _ => {
@@ -32,8 +34,8 @@ impl Usage for RealUsage {
 
 struct RealFileExec;
 impl FileExec for RealFileExec {
-    fn exec(&self, file: &str) {
-        println!("Executing file: {}", file);
+    fn exec(&self, file: &Path) {
+        println!("Executing file: {}", file.display());
         // 実際のファイル実行処理をここに実装
     }
 }
@@ -59,6 +61,7 @@ fn main() {
 mod tests {
     use super::*;
     use std::cell::RefCell;
+    use std::path::Path;
 
     struct MockUsage {
         called: RefCell<bool>,
@@ -75,8 +78,8 @@ mod tests {
         called: RefCell<Option<String>>,
     }
     impl FileExec for MockFileExec {
-        fn exec(&self, file: &str) {
-            *self.called.borrow_mut() = Some(file.to_string());
+        fn exec(&self, file: &Path) {
+            *self.called.borrow_mut() = Some(file.display().to_string());
         }
     }
 
