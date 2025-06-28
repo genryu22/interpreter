@@ -1,13 +1,13 @@
 use std::path::Path;
 
 pub trait Usage {
-    fn show(&self) -> i32;
+    fn show(&self) -> Result<(), String>;
 }
 pub trait FileExec {
-    fn exec(&self, file: &Path);
+    fn exec(&self, file: &Path) -> Result<(), String>;
 }
 pub trait Repl {
-    fn start(&self);
+    fn start(&self) -> Result<(), String>;
 }
 
 pub fn run(
@@ -15,17 +15,11 @@ pub fn run(
     usage: &impl Usage,
     file_exec: &impl FileExec,
     repl: &impl Repl,
-) -> i32 {
+) -> Result<(), String> {
     match args.len() {
         n if n > 1 => usage.show(),
-        1 => {
-            file_exec.exec(Path::new(&args[0]));
-            0
-        }
-        _ => {
-            repl.start();
-            0
-        }
+        1 => file_exec.exec(Path::new(&args[0])),
+        _ => repl.start(),
     }
 }
 
@@ -37,30 +31,34 @@ mod tests {
 
     struct MockUsage {
         called: RefCell<bool>,
-        code: i32,
+        result: Result<(), String>,
     }
     impl Usage for MockUsage {
-        fn show(&self) -> i32 {
+        fn show(&self) -> Result<(), String> {
             *self.called.borrow_mut() = true;
-            self.code
+            self.result.clone()
         }
     }
 
     struct MockFileExec {
         called: RefCell<Option<String>>,
+        result: Result<(), String>,
     }
     impl FileExec for MockFileExec {
-        fn exec(&self, file: &Path) {
+        fn exec(&self, file: &Path) -> Result<(), String> {
             *self.called.borrow_mut() = Some(file.display().to_string());
+            self.result.clone()
         }
     }
 
     struct MockRepl {
         called: RefCell<bool>,
+        result: Result<(), String>,
     }
     impl Repl for MockRepl {
-        fn start(&self) {
+        fn start(&self) -> Result<(), String> {
             *self.called.borrow_mut() = true;
+            self.result.clone()
         }
     }
 
@@ -68,17 +66,19 @@ mod tests {
     fn test_usage_shown_when_args_gt_1() {
         let usage = MockUsage {
             called: RefCell::new(false),
-            code: 42,
+            result: Err("usage error".to_string()),
         };
         let file_exec = MockFileExec {
             called: RefCell::new(None),
+            result: Ok(()),
         };
         let repl = MockRepl {
             called: RefCell::new(false),
+            result: Ok(()),
         };
         let args = vec!["a".to_string(), "b".to_string()];
         let ret = run(&args, &usage, &file_exec, &repl);
-        assert_eq!(ret, 42);
+        assert_eq!(ret, Err("usage error".to_string()));
         assert!(*usage.called.borrow());
         assert!(file_exec.called.borrow().is_none());
         assert!(!*repl.called.borrow());
@@ -88,17 +88,19 @@ mod tests {
     fn test_file_exec_when_args_eq_1() {
         let usage = MockUsage {
             called: RefCell::new(false),
-            code: 99,
+            result: Ok(()),
         };
         let file_exec = MockFileExec {
             called: RefCell::new(None),
+            result: Err("file error".to_string()),
         };
         let repl = MockRepl {
             called: RefCell::new(false),
+            result: Ok(()),
         };
         let args = vec!["file.txt".to_string()];
         let ret = run(&args, &usage, &file_exec, &repl);
-        assert_eq!(ret, 0);
+        assert_eq!(ret, Err("file error".to_string()));
         assert!(!*usage.called.borrow());
         assert_eq!(file_exec.called.borrow().as_deref(), Some("file.txt"));
         assert!(!*repl.called.borrow());
@@ -108,17 +110,19 @@ mod tests {
     fn test_repl_when_args_is_empty() {
         let usage = MockUsage {
             called: RefCell::new(false),
-            code: 77,
+            result: Ok(()),
         };
         let file_exec = MockFileExec {
             called: RefCell::new(None),
+            result: Ok(()),
         };
         let repl = MockRepl {
             called: RefCell::new(false),
+            result: Err("repl error".to_string()),
         };
         let args: Vec<String> = vec![];
         let ret = run(&args, &usage, &file_exec, &repl);
-        assert_eq!(ret, 0);
+        assert_eq!(ret, Err("repl error".to_string()));
         assert!(!*usage.called.borrow());
         assert!(file_exec.called.borrow().is_none());
         assert!(*repl.called.borrow());

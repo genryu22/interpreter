@@ -11,6 +11,11 @@ fn main() {
     let usage = RealUsage;
     let file_exec = RealFileExec;
     let repl = RealRepl;
-    let code = run(&args, &usage, &file_exec, &repl);
-    std::process::exit(code);
+    match run(&args, &usage, &file_exec, &repl) {
+        Ok(()) => std::process::exit(0),
+        Err(msg) => {
+            eprintln!("Error: {}", msg);
+            std::process::exit(64);
+        }
+    }
 }
