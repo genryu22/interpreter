@@ -10,7 +10,7 @@ pub trait Repl {
     fn start(&self) -> Result<(), String>;
 }
 
-pub fn run(
+pub fn lox_main(
     args: &[String],
     usage: &impl Usage,
     file_exec: &impl FileExec,
@@ -77,7 +77,7 @@ mod tests {
             result: Ok(()),
         };
         let args = vec!["a".to_string(), "b".to_string()];
-        let ret = run(&args, &usage, &file_exec, &repl);
+        let ret = lox_main(&args, &usage, &file_exec, &repl);
         assert_eq!(ret, Err("usage error".to_string()));
         assert!(*usage.called.borrow());
         assert!(file_exec.called.borrow().is_none());
@@ -99,7 +99,7 @@ mod tests {
             result: Ok(()),
         };
         let args = vec!["file.txt".to_string()];
-        let ret = run(&args, &usage, &file_exec, &repl);
+        let ret = lox_main(&args, &usage, &file_exec, &repl);
         assert_eq!(ret, Err("file error".to_string()));
         assert!(!*usage.called.borrow());
         assert_eq!(file_exec.called.borrow().as_deref(), Some("file.txt"));
@@ -121,7 +121,7 @@ mod tests {
             result: Err("repl error".to_string()),
         };
         let args: Vec<String> = vec![];
-        let ret = run(&args, &usage, &file_exec, &repl);
+        let ret = lox_main(&args, &usage, &file_exec, &repl);
         assert_eq!(ret, Err("repl error".to_string()));
         assert!(!*usage.called.borrow());
         assert!(file_exec.called.borrow().is_none());

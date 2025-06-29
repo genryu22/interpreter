@@ -3,7 +3,7 @@ use std::path::Path;
 mod core;
 mod real_impls;
 
-use core::{FileExec, Repl, Usage, run};
+use core::{FileExec, Repl, Usage, lox_main};
 use real_impls::{RealFileExec, RealRepl, RealUsage};
 
 fn main() {
@@ -11,7 +11,7 @@ fn main() {
     let usage = RealUsage;
     let file_exec = RealFileExec;
     let repl = RealRepl;
-    match run(&args, &usage, &file_exec, &repl) {
+    match lox_main(&args, &usage, &file_exec, &repl) {
         Ok(()) => std::process::exit(0),
         Err(msg) => {
             eprintln!("Error: {}", msg);
